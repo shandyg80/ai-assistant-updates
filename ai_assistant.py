@@ -1,19 +1,18 @@
 import os
 import subprocess
 import openai
+import requests
+import time
 import speech_recognition as sr
 import pyttsx3
 from flask import Flask, request, jsonify
 
+# ✅ REPLACE THIS WITH YOUR RAW GITHUB FILE URL
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/shandyg80/ai-assistant-updates/refs/heads/main/ai_assistant.py?token=GHSAT0AAAAAAC6JEWFAQELSVKCQLXELUESSZ5CZRFQ"
+
 # Load API Key from Environment Variable
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-# Ensure API Key is set
-if not OPENAI_API_KEY:
-    raise ValueError("❌ ERROR: OPENAI_API_KEY is not set. Please set it in your environment.")
-
-# Initialize OpenAI Client
-client = openai.Client(api_key=OPENAI_API_KEY)
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -57,14 +56,13 @@ def ask_ai(question):
     """Use OpenAI API to generate a response."""
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini-2024-07-18",  # Change to available model
+            model="gpt-4o",  
             messages=[{"role": "user", "content": question}]
         )
         return response.choices[0].message.content
     except openai.OpenAIError as e:
         return f"AI Error: {e}"
 
-# Flask Routes for Web Access
 @app.route("/")
 def home():
     return "AI Assistant is Running!"
@@ -91,7 +89,29 @@ def ai_query():
     response = ask_ai(query)
     return jsonify({"query": query, "response": response})
 
-# Start Flask Web Server
+def update_script():
+    """Check for updates from GitHub and restart if necessary."""
+    print("🔄 Checking for updates...")
+    
+    try:
+        response = requests.get(GITHUB_RAW_URL)
+        if response.status_code == 200:
+            with open(__file__, "w", encoding="utf-8") as f:
+                f.write(response.text)
+            print("✅ Update successful! Restarting...")
+            os.execv(__file__, ["python"] + sys.argv)
+        else:
+            print("❌ Failed to fetch update.")
+    except Exception as e:
+        print(f"❌ Error while updating: {e}")
+
 if __name__ == "__main__":
     print("\n🌍 AI Assistant Web Server Started! Listening on port 5000.")
-    app.run(host="0.0.0.0", port=5000)
+    
+    # ✅ Auto-Update every hour
+    while True:
+        update_script()
+        time.sleep(3600)  # Wait an hour before checking again
+        
+        # Start Flask Web Server
+        app.run(host="0.0.0.0", port=5000)
