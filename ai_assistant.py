@@ -8,7 +8,8 @@ import requests
 from flask import Flask, request, jsonify
 
 # --------------- AUTO-UPDATE FROM GITHUB ---------------
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/shandyg80/ai-assistant-updates/main/ai_assistant.py"
+GITHUB_RAW_URL = GITHUB_RAW_URL = "https://github.com/shandyg80/ai-assistant-updates/raw/refs/heads/main/ai_assistant.py"
+
 
 def update_script():
     """Fetch the latest script from GitHub and update itself."""
